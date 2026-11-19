@@ -402,9 +402,9 @@ def frame_now(today, cur, obs, slush):
         items.append(at(38, 17, pix(COLON, GRAY)))
         items += temp_items(40, 17, rnd(lo), temp_color(lo, slush))
 
-    # Every surface call uses the same white as the H/L labels
-    call, _ = surface_call(today, cur, obs, slush)
-    items.append(at(1, 26, txt(call, GRAY)))
+    # Slush warnings stay amber; every other call uses the same white as the H/L labels
+    call, color = surface_call(today, cur, obs, slush)
+    items.append(at(1, 26, txt(call, AMBER if color == AMBER else GRAY)))
     return canvas(items)
 
 def frame_four_day(days, slush, threshold):
