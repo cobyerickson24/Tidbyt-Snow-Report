@@ -383,55 +383,6 @@ def frame_now(today, cur, obs, slush):
     items.append(at(1, 26, txt(call, color)))
     return canvas(items)
 
-def frame_next_snow(days, threshold):
-    idx = None
-    for i in range(len(days)):
-        if days[i]["snow"] >= threshold:
-            idx = i
-            break
-    if idx == None:
-        return None
-    d = days[idx]
-    amt = "%d" % rnd(d["snow"])
-
-    # storm total = contiguous days with 1"+ around the big day
-    lo_i = idx
-    for _ in range(idx):
-        if lo_i > 0 and days[lo_i - 1]["snow"] >= 1:
-            lo_i -= 1
-        else:
-            break
-    hi_i = idx
-    for _ in range(len(days)):
-        if hi_i < len(days) - 1 and days[hi_i + 1]["snow"] >= 1:
-            hi_i += 1
-        else:
-            break
-    total = 0
-    for i in range(lo_i, hi_i + 1):
-        total += days[i]["snow"]
-
-    # Reads as a sentence: 13" / SNOW / TODAY
-    if idx == 0:
-        when = "TODAY"
-    elif idx == 1:
-        when = "TMRW"
-    else:
-        y, m, dd = d["key"].split("-")
-        when = "%s %d/%d" % (d["name"], int(m), int(dd))
-
-    items = header("*")
-    items.append(at(1, 9, txt(amt, BLUE, BIG)))
-    items.append(at(1 + 6 * len(amt) + 1, 10, txt("\"", BLUE)))
-    items.append(at(64 - small_w("SNOW") - 1, 10, txt("SNOW", WHITE)))
-    items.append(at(64 - small_w(when) - 1, 17, txt(when, ICE)))
-    if rnd(total) > rnd(d["snow"]):
-        items.append(at(1, 26, txt("STORM TOTAL %d\"" % rnd(total), GRAY)))
-    elif d["hi"] != None:
-        items.append(at(1, 26, txt("HIGH", GRAY)))
-        items += temp_items(21, 26, rnd(d["hi"]), WHITE)
-    return canvas(items)
-
 def frame_four_day(days, slush, threshold):
     items = header("*")
     best = best_day_index(days[:4], slush, threshold)
@@ -449,46 +400,6 @@ def frame_four_day(days, slush, threshold):
         s = rnd(d["snow"])
         snow_s = "%d\"" % s if s >= 1 else "-"
         items.append(at(cx + (16 - small_w(snow_s)) // 2, 24, txt(snow_s, BLUE if s >= 1 else DIM)))
-    return canvas(items)
-
-def day_word(d, prev, slush, threshold):
-    if d["snow"] >= threshold:
-        return ("POW", BLUE)
-    if d["snow"] >= 1:
-        return ("SNOW", ICE)
-    if d["hi"] != None and d["hi"] >= slush:
-        return ("SLUSH", AMBER)
-    if d["hi"] != None and d["hi"] >= 38:
-        return ("SOFT", WHITE)
-
-    # Refrozen: yesterday got soft/slushy, today stays cold
-    if prev != None and prev["hi"] != None and prev["hi"] >= 38 and prev["snow"] < 1:
-        return ("FIRM", GRAY)
-    return ("PACKED", WHITE)
-
-def frame_weekend(days, slush, threshold):
-    wk = [i for i in range(1, len(days)) if days[i]["name"] in ("SAT", "SUN")][:2]
-    if len(wk) < 2:
-        return None
-    items = header("WKND")
-    worst = None
-    for r in range(2):
-        d = days[wk[r]]
-        y = 9 + 7 * r
-        items.append(at(1, y, txt(d["name"], WHITE)))
-        if d["hi"] != None:
-            items += temp_items(14, y, rnd(d["hi"]), temp_color(d["hi"], slush))
-        s = rnd(d["snow"])
-        items.append(at(27, y, txt("%d\"" % s if s >= 1 else "-", BLUE if s >= 1 else DIM)))
-        word, wc = day_word(d, days[wk[r] - 1], slush, threshold)
-        items.append(at(64 - small_w(word) - 1, y, txt(word, wc)))
-        if worst == None or d["gust"] > worst["gust"]:
-            worst = d
-    items.append(box(0, 23, 64, 1, RULE))
-    if worst["gust"] >= 40:
-        items.append(at(1, 26, txt("KT22 HOLD RISK", RED)))
-    else:
-        items.append(at(1, 26, txt("GUSTS %d MPH" % rnd(worst["gust"]), GRAY)))
     return canvas(items)
 
 def road_status(r):
@@ -523,8 +434,7 @@ def frame_error(msg):
 
 def main(config):
     slush = int(config.get("slush", "44"))
-    threshold = int(config.get("snow_threshold", "6"))
-    show_weekend = config.bool("show_weekend", True)
+    threshold = 6
     show_roads = config.bool("show_roads", True)
     frame_seconds = config.get("frame_seconds", "6")
     frame_ms = int(frame_seconds) * 1000 if frame_seconds.isdigit() else 6000
@@ -537,17 +447,10 @@ def main(config):
     days, cur = build_days(nws, now)
     obs = snotel_stats(fetch_snotel(now), now)
 
-    frames = [frame_now(days[0], cur, obs, slush)]
-    f = frame_next_snow(days, threshold)
-    if f:
-        frames.append(f)
-    frames.append(frame_four_day(days, slush, threshold))
-
-    weekday = now.in_location(TZ).format("Mon")
-    if show_weekend and weekday in ("Wed", "Thu", "Fri"):
-        f = frame_weekend(days, slush, threshold)
-        if f:
-            frames.append(f)
+    frames = [
+        frame_now(days[0], cur, obs, slush),
+        frame_four_day(days, slush, threshold),
+    ]
     if show_roads:
         f = frame_roads(fetch_roads())
         if f:
@@ -558,8 +461,9 @@ def main(config):
     if only != None and only.isdigit() and int(only) < len(frames):
         return render.Root(child = frames[int(only)])
 
+    # Tidbyt gives each app ~15s, so never let the full cycle run past that
     return render.Root(
-        delay = frame_ms,
+        delay = min(frame_ms, 15000 // len(frames)),
         show_full_animation = True,
         child = render.Animation(children = frames),
     )
@@ -577,27 +481,12 @@ def get_schema():
                 options = [schema.Option(display = "%d°F" % t, value = "%d" % t) for t in range(38, 51, 2)],
             ),
             schema.Dropdown(
-                id = "snow_threshold",
-                name = "Snow day",
-                desc = "Daily snowfall that counts as a real snow day.",
-                icon = "snowflake",
-                default = "6",
-                options = [schema.Option(display = "%d in" % n, value = "%d" % n) for n in [2, 4, 6, 8, 10, 12]],
-            ),
-            schema.Dropdown(
                 id = "frame_seconds",
                 name = "Seconds per screen",
                 desc = "How long each screen stays up.",
                 icon = "clock",
                 default = "6",
                 options = [schema.Option(display = "%d sec" % n, value = "%d" % n) for n in [3, 4, 5, 6, 8, 10]],
-            ),
-            schema.Toggle(
-                id = "show_weekend",
-                name = "Weekend outlook",
-                desc = "Show Sat/Sun outlook Wednesday through Friday.",
-                icon = "calendar",
-                default = True,
             ),
             schema.Toggle(
                 id = "show_roads",

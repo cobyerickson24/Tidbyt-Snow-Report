@@ -5,10 +5,8 @@ A private Tidbyt app for Palisades Tahoe. A GitHub Action renders it every 30 mi
 ## Frames
 
 1. **Now**: mid-mountain temp, today's high/low, and a surface call (SNOWING NOW, FRESH, SOFTENS 11A, SLUSHY BY 1P, FIRM AM, PACKED)
-2. **Snow**: next day with snow at or above the threshold, plus storm total (only when snow is forecast)
-3. **Next 4 days**: highs colored by the slush line; today in gray, the best day in blue
-4. **Weekend**: Sat/Sun outlook and KT-22 wind-hold risk (Wed–Fri only)
-5. **Roads**: I-80 and SR-89 chain controls (only when they're up)
+2. **Next 4 days**: highs colored by the slush line; today in gray, the best day in blue
+3. **Roads**: I-80 and SR-89 chain controls (only when they're up)
 
 ## Data
 

@@ -16,10 +16,8 @@ jobs:
     env:
       # App settings (these replace the settings screen in the Tidbyt phone app)
       SLUSH_LINE: "44"       # mid-mountain high (°F) where snow turns slushy
-      SNOW_THRESHOLD: "6"    # inches in a day that counts as a real snow day
-      SHOW_WEEKEND: "true"   # Sat/Sun outlook, Wed-Fri
       SHOW_ROADS: "true"     # I-80 / SR-89 chain controls when they're up
-      FRAME_SECONDS: "6"     # how long each screen stays up
+      FRAME_SECONDS: "6"     # max seconds per screen (capped so the cycle fits Tidbyt's ~15s slot)
     steps:
       - uses: actions/checkout@v5
 
@@ -32,8 +30,6 @@ jobs:
         run: |
           ./pixlet render palisades_snow.star \
             slush="$SLUSH_LINE" \
-            snow_threshold="$SNOW_THRESHOLD" \
-            show_weekend="$SHOW_WEEKEND" \
             show_roads="$SHOW_ROADS" \
             frame_seconds="$FRAME_SECONDS" \
             -o snow.webp
