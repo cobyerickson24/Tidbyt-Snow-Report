@@ -29,8 +29,7 @@ AMBER = "#ffb02e"
 RED = "#ff4d4d"
 GREEN = "#3ddc6a"
 YELLOW = "#ffd84a"
-TODAY_BG = "#262626"
-BEST_BG = "#0d2a48"
+HILITE_BG = "#262626"
 RULE = "#262626"
 
 SMALL = "CG-pixel-3x5-mono"
@@ -410,11 +409,15 @@ def frame_four_day(days, slush, threshold):
     for i in range(4):
         d = days[i]
         cx = i * 16
+        # Today and the best day share a neutral gray box; the best day's name is gold
+        if i == 0 or i == best:
+            items.append(box(cx, 8, 16, 24, HILITE_BG))
         if i == best:
-            items.append(box(cx, 8, 16, 24, BEST_BG))
+            label_color = YELLOW
         elif i == 0:
-            items.append(box(cx, 8, 16, 24, TODAY_BG))
-        label_color = WHITE if (i == 0 or i == best) else GRAY
+            label_color = WHITE
+        else:
+            label_color = GRAY
         items.append(at(cx + 2, 10, txt(d["name"], label_color)))
         if d["hi"] != None:
             items += temp_items(cx + 2, 17, rnd(d["hi"]), temp_color(d["hi"], slush))
