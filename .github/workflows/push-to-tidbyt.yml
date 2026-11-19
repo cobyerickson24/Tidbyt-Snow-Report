@@ -20,7 +20,7 @@ jobs:
       SHOW_WEEKEND: "true"   # Sat/Sun outlook, Wed-Fri
       SHOW_ROADS: "true"     # I-80 / SR-89 chain controls when they're up
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Pixlet
         run: |
@@ -41,11 +41,14 @@ jobs:
           TIDBYT_API_TOKEN: ${{ secrets.TIDBYT_API_TOKEN }}
           TIDBYT_DEVICE_ID: ${{ secrets.TIDBYT_DEVICE_ID }}
         run: |
+          TOKEN=$(printf '%s' "$TIDBYT_API_TOKEN" | tr -d '[:space:]')
+          DEVICE=$(printf '%s' "$TIDBYT_DEVICE_ID" | tr -d '[:space:]')
+          echo "Device ID is ${#DEVICE} characters"
           ./pixlet push \
-            --api-token "$TIDBYT_API_TOKEN" \
+            --api-token "$TOKEN" \
             --installation-id palisadessnow \
             --background \
-            "$TIDBYT_DEVICE_ID" snow.webp
+            "$DEVICE" snow.webp
 
       - name: Push to work Tidbyt
         if: always()
@@ -57,8 +60,11 @@ jobs:
             echo "No work Tidbyt configured, skipping."
             exit 0
           fi
+          TOKEN=$(printf '%s' "$TIDBYT_API_TOKEN" | tr -d '[:space:]')
+          DEVICE=$(printf '%s' "$TIDBYT_DEVICE_ID" | tr -d '[:space:]')
+          echo "Device ID is ${#DEVICE} characters"
           ./pixlet push \
-            --api-token "$TIDBYT_API_TOKEN" \
+            --api-token "$TOKEN" \
             --installation-id palisadessnow \
             --background \
-            "$TIDBYT_DEVICE_ID" snow.webp
+            "$DEVICE" snow.webp
