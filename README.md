@@ -26,7 +26,7 @@ Repo → Settings → Secrets and variables → Actions:
 
 - `TIDBYT_API_TOKEN`: Tidbyt app → Settings → General → Get API key
 - `TIDBYT_DEVICE_ID`: shown on the same screen
-- `TIDBYT_API_TOKEN_2` / `TIDBYT_DEVICE_ID_2`: optional second Tidbyt (each device has its own key)
+- `TIDBYT_WORK_API_TOKEN` / `TIDBYT_WORK_DEVICE_ID`: the work Tidbyt (each device has its own key)
 
 ## Local preview
 
