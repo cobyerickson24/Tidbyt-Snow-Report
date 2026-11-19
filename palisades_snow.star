@@ -22,7 +22,7 @@ NWS_HEADERS = {"User-Agent": "palisades-snow-tidbyt (personal app)", "Accept": "
 
 ICE = "#bfe3ff"
 WHITE = "#e8e8e8"
-GRAY = "#7a7a7a"
+GRAY = "#b0b0b0"
 DIM = "#3a4656"
 BLUE = "#4aa8ff"
 AMBER = "#ffb02e"
@@ -411,12 +411,20 @@ def frame_next_snow(days, threshold):
     for i in range(lo_i, hi_i + 1):
         total += days[i]["snow"]
 
-    items = header("SNOW")
+    # Reads as a sentence: 13" / SNOW / TODAY
+    if idx == 0:
+        when = "TODAY"
+    elif idx == 1:
+        when = "TMRW"
+    else:
+        y, m, dd = d["key"].split("-")
+        when = "%s %d/%d" % (d["name"], int(m), int(dd))
+
+    items = header("*")
     items.append(at(1, 9, txt(amt, BLUE, BIG)))
     items.append(at(1 + 6 * len(amt) + 1, 10, txt("\"", BLUE)))
-    name = "TODAY" if idx == 0 else d["name"]
-    items.append(at(64 - small_w(name) - 1, 10, txt(name, WHITE)))
-    items.append(at(64 - small_w(d["date"]) - 1, 17, txt(d["date"], GRAY)))
+    items.append(at(64 - small_w("SNOW") - 1, 10, txt("SNOW", WHITE)))
+    items.append(at(64 - small_w(when) - 1, 17, txt(when, ICE)))
     if rnd(total) > rnd(d["snow"]):
         items.append(at(1, 26, txt("STORM TOTAL %d\"" % rnd(total), GRAY)))
     elif d["hi"] != None:
