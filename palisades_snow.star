@@ -325,7 +325,7 @@ def surface_call(today, cur, obs, slush):
     yest_hi = obs["yest_hi"] if obs["yest_hi"] != None else hi
 
     if cur["snow_rate"] >= 0.1:
-        return ("SNOWING NOW", BLUE)
+        return ("SNOWING NOW", GRAY)
     if obs["new24"] >= 3 and hi < 36:
         return ("FRESH %d\" 24H" % obs["new24"], BLUE)
 
