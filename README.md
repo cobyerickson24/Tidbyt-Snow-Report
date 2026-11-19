@@ -33,3 +33,9 @@ pixlet serve palisades_snow.star
 ```
 
 Add `frame=N` (0–4) to the preview URL to see a single frame.
+
+## Quiet hours
+
+From 9:00pm to 7:30am Pacific (`QUIET_START` / `QUIET_END` in the workflow), each run removes the app from both Tidbyts so a night clock can have the screen to itself. The first run after 7:30am pushes it back. GitHub's schedule can start runs a few minutes late.
+
+To switch it by hand: Actions → Push to Tidbyt → Run workflow → pick `day` (push now) or `night` (remove now).

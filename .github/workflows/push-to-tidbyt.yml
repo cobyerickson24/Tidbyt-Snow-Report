@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "*/30 * * * *" # every 30 min (GitHub may start runs a few minutes late)
   workflow_dispatch: # "Run workflow" button for manual refreshes
+    inputs:
+      mode:
+        description: "auto = follow quiet hours; day = push now; night = remove now"
+        type: choice
+        options: [auto, day, night]
+        default: auto
 
 concurrency:
   group: tidbyt
@@ -18,7 +24,28 @@ jobs:
       SLUSH_LINE: "44"       # mid-mountain high (°F) where snow turns slushy
       SHOW_ROADS: "true"     # I-80 / SR-89 chain controls when they're up
       FRAME_SECONDS: "6"     # max seconds per screen (capped so the cycle fits Tidbyt's ~15s slot)
+
+      # Quiet hours (Pacific time, 24h HHMM): the app is removed from both
+      # Tidbyts so the night clock has the screen to itself.
+      QUIET_START: "2100"
+      QUIET_END: "0730"
     steps:
+      - name: Day or night?
+        id: mode
+        env:
+          FORCE: ${{ inputs.mode }}
+        run: |
+          now=$(TZ=America/Los_Angeles date +%H%M)
+          if [ -n "$FORCE" ] && [ "$FORCE" != "auto" ]; then
+            mode="$FORCE"
+          elif [ "$now" -ge "$QUIET_START" ] || [ "$now" -lt "$QUIET_END" ]; then
+            mode=night
+          else
+            mode=day
+          fi
+          echo "Pacific time $now -> $mode"
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@v5
 
       - name: Install Pixlet
@@ -27,6 +54,7 @@ jobs:
           ./pixlet version
 
       - name: Render
+        if: steps.mode.outputs.mode == 'day'
         run: |
           ./pixlet render palisades_snow.star \
             slush="$SLUSH_LINE" \
@@ -34,35 +62,17 @@ jobs:
             frame_seconds="$FRAME_SECONDS" \
             -o snow.webp
 
-      - name: Push to Tidbyt
+      - name: Update Tidbyt
         env:
+          MODE: ${{ steps.mode.outputs.mode }}
           TIDBYT_API_TOKEN: ${{ secrets.TIDBYT_API_TOKEN }}
           TIDBYT_DEVICE_ID: ${{ secrets.TIDBYT_DEVICE_ID }}
-        run: |
-          TOKEN=$(printf '%s' "$TIDBYT_API_TOKEN" | tr -d '[:space:]')
-          DEVICE=$(printf '%s' "$TIDBYT_DEVICE_ID" | tr -d '[:space:]')
-          echo "Device ID is ${#DEVICE} characters"
-          ./pixlet push \
-            --api-token "$TOKEN" \
-            --installation-id palisadessnow \
-            --background \
-            "$DEVICE" snow.webp
+        run: ./update-device.sh
 
-      - name: Push to work Tidbyt
+      - name: Update work Tidbyt
         if: always()
         env:
+          MODE: ${{ steps.mode.outputs.mode }}
           TIDBYT_API_TOKEN: ${{ secrets.TIDBYT_WORK_API_TOKEN }}
           TIDBYT_DEVICE_ID: ${{ secrets.TIDBYT_WORK_DEVICE_ID }}
-        run: |
-          if [ -z "$TIDBYT_API_TOKEN" ] || [ -z "$TIDBYT_DEVICE_ID" ]; then
-            echo "No work Tidbyt configured, skipping."
-            exit 0
-          fi
-          TOKEN=$(printf '%s' "$TIDBYT_API_TOKEN" | tr -d '[:space:]')
-          DEVICE=$(printf '%s' "$TIDBYT_DEVICE_ID" | tr -d '[:space:]')
-          echo "Device ID is ${#DEVICE} characters"
-          ./pixlet push \
-            --api-token "$TOKEN" \
-            --installation-id palisadessnow \
-            --background \
-            "$DEVICE" snow.webp
+        run: ./update-device.sh
