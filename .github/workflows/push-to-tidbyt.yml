@@ -3,6 +3,10 @@ name: Push to Tidbyt
 on:
   schedule:
     - cron: "*/30 * * * *" # every 30 min (GitHub may start runs a few minutes late)
+    # Extra runs at :45 so the app leaves at 8:45pm and returns at 7:45am Pacific.
+    # Cron is UTC, so each covers both PST and PDT (the off-hour run is harmless).
+    - cron: "45 3,4 * * *"   # 8:45pm Pacific
+    - cron: "45 14,15 * * *" # 7:45am Pacific
   workflow_dispatch: # "Run workflow" button for manual refreshes
     inputs:
       mode:
@@ -27,8 +31,8 @@ jobs:
 
       # Quiet hours (Pacific time, 24h HHMM): the app is removed from both
       # Tidbyts so the night clock has the screen to itself.
-      QUIET_START: "2100"
-      QUIET_END: "0730"
+      QUIET_START: "2045"    # leaves 15 min before the night clock starts (9:00pm)
+      QUIET_END: "0745"      # returns 15 min after it ends (7:30am)
     steps:
       - name: Day or night?
         id: mode
