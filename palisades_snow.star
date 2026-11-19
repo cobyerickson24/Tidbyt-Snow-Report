@@ -34,6 +34,7 @@ RULE = "#262626"
 
 SMALL = "CG-pixel-3x5-mono"
 
+COLON = ["0", "1", "0", "1", "0"]
 FLAKE = ["10101", "01110", "11111", "01110", "10101"]
 DEG = ["010", "101", "010"]
 DEG_MED = ["0110", "1001", "1001", "0110"]
@@ -393,14 +394,17 @@ def frame_now(today, cur, obs, slush):
 
     if today["hi"] != None:
         items.append(at(34, 9, txt("H", GRAY)))
-        items += temp_items(38, 9, rnd(today["hi"]), temp_color(today["hi"], slush))
+        items.append(at(38, 9, pix(COLON, GRAY)))
+        items += temp_items(40, 9, rnd(today["hi"]), temp_color(today["hi"], slush))
     if today["lo"] != None or obs["night_lo"] != None:
         lo = obs["night_lo"] if obs["night_lo"] != None else today["lo"]
         items.append(at(34, 17, txt("L", GRAY)))
-        items += temp_items(38, 17, rnd(lo), temp_color(lo, slush))
+        items.append(at(38, 17, pix(COLON, GRAY)))
+        items += temp_items(40, 17, rnd(lo), temp_color(lo, slush))
 
+    # Slush warnings stay amber; every other call uses the same white as the H/L labels
     call, color = surface_call(today, cur, obs, slush)
-    items.append(at(1, 26, txt(call, color)))
+    items.append(at(1, 26, txt(call, AMBER if color == AMBER else GRAY)))
     return canvas(items)
 
 def frame_four_day(days, slush, threshold):
