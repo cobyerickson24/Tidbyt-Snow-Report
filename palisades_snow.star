@@ -518,6 +518,8 @@ def main(config):
     threshold = int(config.get("snow_threshold", "6"))
     show_weekend = config.bool("show_weekend", True)
     show_roads = config.bool("show_roads", True)
+    frame_seconds = config.get("frame_seconds", "6")
+    frame_ms = int(frame_seconds) * 1000 if frame_seconds.isdigit() else 6000
 
     now = time.now()
     nws = fetch_nws()
@@ -549,7 +551,7 @@ def main(config):
         return render.Root(child = frames[int(only)])
 
     return render.Root(
-        delay = 15000 // len(frames),
+        delay = frame_ms,
         show_full_animation = True,
         child = render.Animation(children = frames),
     )
@@ -573,6 +575,14 @@ def get_schema():
                 icon = "snowflake",
                 default = "6",
                 options = [schema.Option(display = "%d in" % n, value = "%d" % n) for n in [2, 4, 6, 8, 10, 12]],
+            ),
+            schema.Dropdown(
+                id = "frame_seconds",
+                name = "Seconds per screen",
+                desc = "How long each screen stays up.",
+                icon = "clock",
+                default = "6",
+                options = [schema.Option(display = "%d sec" % n, value = "%d" % n) for n in [3, 4, 5, 6, 8, 10]],
             ),
             schema.Toggle(
                 id = "show_weekend",
